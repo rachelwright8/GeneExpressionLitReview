@@ -60,6 +60,17 @@ levels(as.factor(lit0$Expt.Factors.Stress))
 lit0$NumStress <- str_count(lit0$Expt.Factors.Stress, ";")+1
 ```
 
+Rename some factors to match (e.g., temp and acidification is the same as acidification and temp)
+
+```{r}
+lit0 %>% select(Expt.Factors.Stress) %>% filter(grepl("acidification",lit0$Expt.Factors.Stress)) %>% distinct
+
+lit0$Expt.Factors.Stress <- gsub("acidification;temperature","temperature;acidification",lit0$Expt.Factors.Stress)
+
+lit0 %>% select(Expt.Factors.Stress) %>% filter(grepl("acidification",lit0$Expt.Factors.Stress)) %>% distinct
+
+```
+
 The interactions are always between two stressors.
 
 Sometimes they are fully factorial and get counted as "3" stresses (e.g., temperature;salinity;temp x salinity).
@@ -528,13 +539,19 @@ sunplot.partner2study2expt.data <- bind_rows(lit.sun.2.partner,
                               lit.sun.2.study,
                               lit.sun.2.expt)
 
-colors <- ifelse(grepl("^Coral", sunplot.partner2study2expt.data$ids),pal_npg()(1)[1],
-                 ifelse(grepl("^Anemone", sunplot.partner2study2expt.data$ids),pal_npg()(4)[4],
+colors <- ifelse(grepl("^Coral host$", sunplot.partner2study2expt.data$ids),pal_npg()(1)[1],
+                 ifelse(grepl("^Coral host;Sym", sunplot.partner2study2expt.data$ids),pal_npg()(4)[4],
+                 ifelse(grepl("^Anemone host$", sunplot.partner2study2expt.data$ids),pal_npg()(5)[5],
+                ifelse(grepl("^Anemone host;Sym", sunplot.partner2study2expt.data$ids),pal_npg()(2)[2],
                  ifelse(grepl("^Symbiodiniaceae", sunplot.partner2study2expt.data$ids),pal_npg()(3)[3],
                 ifelse(grepl("_Symbiodiniaceae", sunplot.partner2study2expt.data$ids),pal_npg()(7)[7],
-                ifelse(grepl("_Coral", sunplot.partner2study2expt.data$ids),pal_npg()(5)[5],
-                ifelse(grepl("_Anemone", sunplot.partner2study2expt.data$ids),pal_npg()(6)[6],
-                 "grey"))))))
+                ifelse(grepl("_Coral host$", sunplot.partner2study2expt.data$ids),pal_npg()(1)[1],
+                ifelse(grepl("_Coral host;Sym", sunplot.partner2study2expt.data$ids),pal_npg()(4)[4],
+                ifelse(grepl("_Anemone host$", sunplot.partner2study2expt.data$ids),pal_npg()(5)[5],
+                ifelse(grepl("_Anemone host;Sym", sunplot.partner2study2expt.data$ids),pal_npg()(2)[2],
+                ifelse(grepl("^Bacteria", sunplot.partner2study2expt.data$ids),pal_npg()(7)[7],
+                ifelse(grepl("_Bacteria", sunplot.partner2study2expt.data$ids),pal_npg()(7)[7],
+                 "grey"))))))))))))
 sunplot.partner2study2expt.data$colors <- colors
 ```
 
@@ -545,10 +562,10 @@ Sunplot from study focus to expt factors
 sunplot.partner2study2expt <- plot_ly(sunplot.partner2study2expt.data, ids = ~ids, labels = ~labels, 
                  parents = ~parents, values= ~n, 
                  type = 'sunburst', branchvalues = 'total',
-                 insidetextorientation="horizontal",
+                 insidetextorientation="auto",
                  width = 500, height = 400,
-                 marker = list(colors = colors),
-                 color = I('#000000'))
+                 marker = list(colors = sunplot.partner2study2expt.data$colors),
+                 color = I('#FFFFFF'))
 sunplot.partner2study2expt
 ```
 
@@ -615,12 +632,16 @@ sunplot.dev2fam.data <- bind_rows(lit.sun.1.dev.stage,
 
 colors <- ifelse(grepl("^adult", sunplot.dev2fam.data$ids),pal_npg()(1)[1],
                  ifelse(grepl("^larvae", sunplot.dev2fam.data$ids),pal_npg()(4)[4],
-                 ifelse(grepl("^juvenile", sunplot.dev2fam.data$ids),pal_npg()(3)[3],
+                 ifelse(grepl("^juvenile", sunplot.dev2fam.data$ids),pal_npg()(2)[2],
                  ifelse(grepl("_adult", sunplot.dev2fam.data$ids),pal_npg()(5)[5],
                  ifelse(grepl("_larvae", sunplot.dev2fam.data$ids),pal_npg()(6)[6],
-                 ifelse(grepl("_juvenile", sunplot.dev2fam.data$ids),pal_npg()(7)[7],
+                 ifelse(grepl("_juvenile", sunplot.dev2fam.data$ids),pal_npg()(2)[2],
                  "grey"))))))
+
 sunplot.dev2fam.data$colors <- colors
+sunplot.dev2fam.data$colors <- if_else(grepl("Sym",sunplot.dev2fam.data$ids),
+                                       true = pal_npg()(3)[3],
+                                       false = sunplot.dev2fam.data$colors)
 ```
 
 Sunplot from developmental stage to focal family
@@ -629,9 +650,9 @@ Sunplot from developmental stage to focal family
 sunplot.dev2fam <- plot_ly(sunplot.dev2fam.data, ids = ~ids, labels = ~labels, 
                  parents = ~parents, values= ~n, 
                  type = 'sunburst', branchvalues = 'total',
-                 insidetextorientation="horizontal",
-                 marker = list(colors = colors),
-                 color = I('#000000'))
+                 insidetextorientation="auto",
+                 marker = list(colors = sunplot.dev2fam.data$colors),
+                 color = I('#FFFFFF'))
 sunplot.dev2fam
 ```
 
@@ -668,12 +689,16 @@ sunplot.dev2fam2spp.data <- bind_rows(lit.sun.1.dev.stage,
 
 colors <- ifelse(grepl("^adult", sunplot.dev2fam2spp.data$ids),pal_npg()(1)[1],
                  ifelse(grepl("^larvae", sunplot.dev2fam2spp.data$ids),pal_npg()(4)[4],
-                 ifelse(grepl("^juvenile", sunplot.dev2fam2spp.data$ids),pal_npg()(3)[3],
+                 ifelse(grepl("^juvenile", sunplot.dev2fam2spp.data$ids),pal_npg()(2)[2],
                  ifelse(grepl("_adult", sunplot.dev2fam2spp.data$ids),pal_npg()(5)[5],
                  ifelse(grepl("_larvae", sunplot.dev2fam2spp.data$ids),pal_npg()(6)[6],
-                 ifelse(grepl("_juvenile", sunplot.dev2fam2spp.data$ids),pal_npg()(7)[7],
+                 ifelse(grepl("_juvenile", sunplot.dev2fam2spp.data$ids),pal_npg()(2)[2],
                  "grey"))))))
+
 sunplot.dev2fam2spp.data$colors <- colors
+sunplot.dev2fam2spp.data$colors <- if_else(grepl("Sym",sunplot.dev2fam2spp.data$ids),
+                                       true = pal_npg()(3)[3],
+                                       false = sunplot.dev2fam2spp.data$colors)
 ```
 
 Total number in this chart
@@ -688,10 +713,10 @@ Sunplot from developmental stage to focal family to species
 sunplot.dev2fam2spp <- plot_ly(sunplot.dev2fam2spp.data, ids = ~ids, labels = ~labels, 
                  parents = ~parents, values= ~n, 
                  type = 'sunburst', branchvalues = 'total',
-                 insidetextorientation="horizontal",
+                 insidetextorientation="auto",
                  width = 500, height = 400,
-                 marker = list(colors = colors),
-                 color = I('#000000'))
+                 marker = list(colors = sunplot.dev2fam2spp.data$colors),
+                 color = I('#FFFFFF'))
 sunplot.dev2fam2spp
 ```
 
@@ -705,7 +730,7 @@ sunplot.dev2fam2spp
 
 
 
-# Figure 3C: Multistressors
+# Figure 4A: Multistressors
 
 ```{r}
 lit.sun.6 <- lit %>%
@@ -751,19 +776,26 @@ lit.sun.6.expt.fact<- lit.sun.6 %>%
 ```{r}
 sunplot.expt2num.data <- bind_rows(lit.sun.6.expt.fact,
                                 lit.sun.6.num)
+
+colors <- ifelse(grepl("1", sunplot.expt2num.data$ids),pal_npg()(1)[1],
+                 ifelse(grepl("2", sunplot.expt2num.data$ids),pal_npg()(4)[4],
+                 ifelse(grepl("3", sunplot.expt2num.data$ids),pal_npg()(3)[3],
+                 ifelse(grepl("4", sunplot.expt2num.data$ids),pal_npg()(2)[2],
+                 "grey"))))
+
+sunplot.expt2num.data$colors <- colors
 ```
 
 Sunplot from experimental factors to number of experimental factors
 
 ```{r}
-colors <- c(pal_npg()(1)[1], pal_npg()(4)[4], pal_npg()(3)[3], pal_npg()(2)[2])
 sunplot.num2exp <- plot_ly(sunplot.expt2num.data, ids = ~ids, labels = ~labels, 
                  parents = ~parents, values= ~n, 
                  type = 'sunburst', branchvalues = 'total',
+                 insidetextorientation="radial",
                  width = 500, height = 400,
-                 insidetextorientation="horizontal") %>%
-    layout(sunburstcolorway = ~colors)
-  
+                 marker = list(colors = sunplot.expt2num.data$colors),
+                 color = I('#FFFFFF'))
 sunplot.num2exp
 ```
 
@@ -824,15 +856,15 @@ lit.sun.4.expt <- lit.sun.4 %>% filter(!is.na(Expt.Factors)) %>%
 sunplot.cons2expt.data <- bind_rows(lit.sun.4.cons,
                                 lit.sun.4.expt)
 
-colors <- ifelse(grepl("^biomarker", sunplot.cons2expt.data$ids),pal_npg()(1)[1],
-                 ifelse(grepl("^inter-population variation", sunplot.cons2expt.data$ids),pal_npg()(2)[2],
-                 ifelse(grepl("^intra-population variation", sunplot.cons2expt.data$ids),pal_npg()(3)[3],
-                 ifelse(grepl("^management decisions", sunplot.cons2expt.data$ids),pal_npg()(4)[4],
-                 ifelse(grepl("^reef festoration technology", sunplot.cons2expt.data$ids),pal_npg()(5)[5],
-                 ifelse(grepl("^heritability", sunplot.cons2expt.data$ids),pal_npg()(6)[6],
-                 ifelse(grepl("^restoration lines", sunplot.cons2expt.data$ids),pal_npg()(7)[7],
-                 ifelse(grepl("^cryptic species", sunplot.cons2expt.data$ids),pal_npg()(8)[8],
-                 ifelse(grepl("^methods development", sunplot.cons2expt.data$ids),pal_npg()(9)[9],
+colors <- ifelse(grepl("biomarker", sunplot.cons2expt.data$ids),pal_npg()(1)[1],
+                 ifelse(grepl("inter-population variation", sunplot.cons2expt.data$ids),pal_npg()(2)[2],
+                 ifelse(grepl("intra-population variation", sunplot.cons2expt.data$ids),pal_npg()(3)[3],
+                 ifelse(grepl("management decisions", sunplot.cons2expt.data$ids),pal_npg()(4)[4],
+                 ifelse(grepl("reef festoration technology", sunplot.cons2expt.data$ids),pal_npg()(5)[5],
+                 ifelse(grepl("heritability", sunplot.cons2expt.data$ids),pal_npg()(6)[6],
+                 ifelse(grepl("restoration lines", sunplot.cons2expt.data$ids),pal_npg()(7)[7],
+                 ifelse(grepl("cryptic species", sunplot.cons2expt.data$ids),pal_npg()(8)[8],
+                 ifelse(grepl("methods development", sunplot.cons2expt.data$ids),pal_npg()(9)[9],
                  "grey")))))))))
 sunplot.cons2expt.data$colors <- colors
 ```
@@ -843,10 +875,10 @@ Sunplot from conservation to experimental factors
 sunplot.cons2expt <- plot_ly(sunplot.cons2expt.data, ids = ~ids, labels = ~labels, 
                  parents = ~parents, values= ~n, 
                  type = 'sunburst', branchvalues = 'total',
-                 insidetextorientation="horizontal",
+                 insidetextorientation="auto",
                  width = 500, height = 400,
-                 color = I('#000000')) %>%
-  layout(sunburstcolorway = ~colors)
+                 marker = list(colors = sunplot.cons2expt.data$colors),
+                 color = I('#FFFFFF'))
   
 sunplot.cons2expt
 ```
